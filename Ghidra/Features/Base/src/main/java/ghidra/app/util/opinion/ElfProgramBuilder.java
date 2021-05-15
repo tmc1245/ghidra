@@ -2292,6 +2292,15 @@ class ElfProgramBuilder extends MemorySectionResolver implements ElfLoadHelper {
 		}
 		monitor.initialize(totalLength);
 
+
+		ElfStringTable[] stringTables = elf.getStringTables();
+
+		long totalLength = 0;
+		for (ElfStringTable stringTable : stringTables) {
+			totalLength += stringTable.getLength();
+		}
+		monitor.initialize(totalLength);
+
 		for (ElfStringTable stringTable : stringTables) {
 			monitor.checkCanceled();
 
