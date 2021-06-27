@@ -36,7 +36,6 @@ import docking.actions.PopupActionProvider;
 import docking.actions.ToolActions;
 import docking.framework.AboutDialog;
 import docking.framework.ApplicationInformationDisplayFactory;
-import docking.framework.SplashScreen;
 import docking.help.Help;
 import docking.help.HelpService;
 import docking.tool.ToolConstants;
@@ -450,7 +449,7 @@ public abstract class PluginTool extends AbstractDockingTool {
 		}
 
 		winMgr.setVisible(false);
-		eventMgr.clearLastEvents();
+		eventMgr.clear();
 		pluginMgr.dispose();
 
 		toolActions.removeActions(ToolConstants.TOOL_OWNER);
@@ -552,7 +551,6 @@ public abstract class PluginTool extends AbstractDockingTool {
 		else {
 			fullName = toolName + "(" + instanceName + ")";
 		}
-		SplashScreen.updateSplashScreenStatus("Loading " + fullName + " ...");
 
 		restoreOptionsFromXml(root);
 		winMgr.restorePreferencesFromXML(root);
@@ -969,8 +967,8 @@ public abstract class PluginTool extends AbstractDockingTool {
 		saveAsAction.setMenuBarData(menuData);
 
 		saveAsAction.setEnabled(true);
-		saveAsAction
-				.setHelpLocation(new HelpLocation(ToolConstants.TOOL_HELP_TOPIC, "Tool_Changes"));
+		saveAsAction.setHelpLocation(
+			new HelpLocation(ToolConstants.TOOL_HELP_TOPIC, "Tool_Changes"));
 
 		addAction(saveAction);
 		addAction(saveAsAction);
@@ -995,8 +993,8 @@ public abstract class PluginTool extends AbstractDockingTool {
 			new String[] { ToolConstants.MENU_FILE, exportPullright, "Export Tool..." });
 		menuData.setMenuSubGroup(Integer.toString(subGroup++));
 		exportToolAction.setMenuBarData(menuData);
-		exportToolAction
-				.setHelpLocation(new HelpLocation(ToolConstants.TOOL_HELP_TOPIC, "Export_Tool"));
+		exportToolAction.setHelpLocation(
+			new HelpLocation(ToolConstants.TOOL_HELP_TOPIC, "Export_Tool"));
 		addAction(exportToolAction);
 
 		DockingAction exportDefautToolAction =
@@ -1419,9 +1417,12 @@ public abstract class PluginTool extends AbstractDockingTool {
 	 * time the dialog is shown.
 	 *
 	 * @param dialogComponent the DialogComponentProvider object to be shown in a dialog.
+	 * 
+	 * @deprecated dialogs are now always shown over the active window when possible
 	 */
+	@Deprecated
 	public void showDialogOnActiveWindow(DialogComponentProvider dialogComponent) {
-		DockingWindowManager.showDialogOnActiveWindow(dialogComponent);
+		DockingWindowManager.showDialog(dialogComponent);
 	}
 
 	/**
@@ -1445,7 +1446,7 @@ public abstract class PluginTool extends AbstractDockingTool {
 	 * @param centeredOnComponent the component on which to center the dialog.
 	 */
 	public void showDialog(DialogComponentProvider dialogComponent, Component centeredOnComponent) {
-		DockingWindowManager.showDialog(getToolFrame(), dialogComponent, centeredOnComponent);
+		DockingWindowManager.showDialog(centeredOnComponent, dialogComponent);
 	}
 
 	public Window getActiveWindow() {

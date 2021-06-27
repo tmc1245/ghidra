@@ -41,10 +41,10 @@ class BigRefListV0 extends RefList {
 
 	private static final String BASE_TABLE_NAME = "BigRefList_";
 
-	private static final Schema BIG_REFS_SCHEMA = new Schema(1, "RefID", new Class[] {
-		LongField.class, ByteField.class, ByteField.class, ByteField.class, LongField.class,
-		LongField.class }, new String[] { "Address", "Flags", "Type", "OpIndex", "SymbolID",
-		"Offset" });
+	private static final Schema BIG_REFS_SCHEMA = new Schema(1, "RefID",
+		new Field[] { LongField.INSTANCE, ByteField.INSTANCE, ByteField.INSTANCE,
+			ByteField.INSTANCE, LongField.INSTANCE, LongField.INSTANCE },
+		new String[] { "Address", "Flags", "Type", "OpIndex", "SymbolID", "Offset" });
 
 	private static int ADDRESS_COL = 0;
 	private static int FLAGS_COL = 1;
@@ -55,7 +55,7 @@ class BigRefListV0 extends RefList {
 
 	private byte refLevel = -1;
 	private Table table;
-	private Record record;
+	private DBRecord record;
 
 	/**
 	 * Construct new empty reference list
@@ -71,9 +71,8 @@ class BigRefListV0 extends RefList {
 			DBObjectCache<RefList> cache, boolean isFrom) throws IOException {
 		super(addrMap.getKey(address, true), address, adapter, addrMap, program, cache, isFrom);
 		record = ToAdapter.TO_REFS_SCHEMA.createRecord(key);
-		table =
-			program.getDBHandle().createTable(BASE_TABLE_NAME + Long.toHexString(key),
-				BIG_REFS_SCHEMA, new int[] { ADDRESS_COL });
+		table = program.getDBHandle().createTable(BASE_TABLE_NAME + Long.toHexString(key),
+			BIG_REFS_SCHEMA, new int[] { ADDRESS_COL });
 	}
 
 	/**
@@ -85,7 +84,7 @@ class BigRefListV0 extends RefList {
 	 * @param cache RefList object cache
 	 * @param isFrom true for from-adapter use, false for to-adapter use
 	 */
-	BigRefListV0(Record rec, RecordAdapter adapter, AddressMap addrMap, ProgramDB program,
+	BigRefListV0(DBRecord rec, RecordAdapter adapter, AddressMap addrMap, ProgramDB program,
 			DBObjectCache<RefList> cache, boolean isFrom) throws IOException {
 		super(rec.getKey(), addrMap.decodeAddress(rec.getKey()), adapter, addrMap, program, cache,
 			isFrom);
@@ -95,8 +94,8 @@ class BigRefListV0 extends RefList {
 		String tableName = BASE_TABLE_NAME + Long.toHexString(rec.getKey());
 		table = program.getDBHandle().getTable(tableName);
 		if (table == null) {
-			throw new IOException("BigRefList table not found for " + address + " (" + tableName +
-				")");
+			throw new IOException(
+				"BigRefList table not found for " + address + " (" + tableName + ")");
 		}
 		if (!isFrom) {
 			refLevel = rec.getByteValue(ToAdapter.REF_LEVEL_COL);
@@ -114,9 +113,6 @@ class BigRefListV0 extends RefList {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#addRef(ghidra.program.model.address.Address, ghidra.program.model.address.Address, ghidra.program.model.symbol.RefType, boolean, int, long, boolean)
-	 */
 	@Override
 	void addRef(Address fromAddr, Address toAddr, RefType refType, int opIndex, long symbolID,
 			boolean isPrimary, SourceType source, boolean isOffset, boolean isShift,
@@ -165,8 +161,8 @@ class BigRefListV0 extends RefList {
 			}
 
 			appendRef(ref.getFromAddress(), ref.getToAddress(), ref.getOperandIndex(),
-				ref.getReferenceType(), ref.getSource(), isPrimary, symbolID, isOffset,
-				isShifted, offsetOrShift);
+				ref.getReferenceType(), ref.getSource(), isPrimary, symbolID, isOffset, isShifted,
+				offsetOrShift);
 
 		}
 		updateRecord();
@@ -186,7 +182,7 @@ class BigRefListV0 extends RefList {
 		if (id < 0) {
 			id = 0;
 		}
-		Record refRec = BIG_REFS_SCHEMA.createRecord(id);
+		DBRecord refRec = BIG_REFS_SCHEMA.createRecord(id);
 		refRec.setLongValue(ADDRESS_COL, addrMap.getKey(isFrom ? toAddr : fromAddr, true));
 		RefListFlagsV0 flags =
 			new RefListFlagsV0(isPrimary, isOffset, symbolID >= 0, isShifted, source);
@@ -198,7 +194,7 @@ class BigRefListV0 extends RefList {
 		table.putRecord(refRec);
 	}
 
-	private ReferenceDB getRef(Record rec) {
+	private ReferenceDB getRef(DBRecord rec) {
 		long symbolID = -1;
 		long addr = rec.getLongValue(ADDRESS_COL);
 
@@ -239,9 +235,6 @@ class BigRefListV0 extends RefList {
 			symbolID);
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#getAllRefs()
-	 */
 	@Override
 	synchronized Reference[] getAllRefs() throws IOException {
 		Reference[] refs = new Reference[getNumRefs()];
@@ -252,17 +245,11 @@ class BigRefListV0 extends RefList {
 		return refs;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#getNumRefs()
-	 */
 	@Override
 	int getNumRefs() {
 		return table.getRecordCount();
 	}
 
-	/*
-	 * @see ghidra.program.database.references.RefList#hasReference(int)
-	 */
 	@Override
 	boolean hasReference(int opIndex) throws IOException {
 		if (!isFrom) {
@@ -278,9 +265,6 @@ class BigRefListV0 extends RefList {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#getPrimaryRef()
-	 */
 	@Override
 	synchronized Reference getPrimaryRef(int opIndex) throws IOException {
 		if (!isFrom) {
@@ -288,7 +272,7 @@ class BigRefListV0 extends RefList {
 		}
 		RecordIterator iterator = table.iterator();
 		while (iterator.hasNext()) {
-			Record rec = iterator.next();
+			DBRecord rec = iterator.next();
 			if (rec.getByteValue(OPINDEX_COL) != opIndex) {
 				continue;
 			}
@@ -300,14 +284,11 @@ class BigRefListV0 extends RefList {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#getRef(ghidra.program.model.address.Address, int)
-	 */
 	@Override
 	synchronized ReferenceDB getRef(Address refAddress, int opIndex) throws IOException {
 		LongField addrField = new LongField(addrMap.getKey(refAddress, false));
-		for (long id : table.findRecords(addrField, ADDRESS_COL)) {
-			Record rec = table.getRecord(id);
+		for (Field id : table.findRecords(addrField, ADDRESS_COL)) {
+			DBRecord rec = table.getRecord(id);
 			if (rec.getByteValue(OPINDEX_COL) == (byte) opIndex) {
 				return getRef(rec);
 			}
@@ -315,33 +296,21 @@ class BigRefListV0 extends RefList {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#getRefs()
-	 */
 	@Override
 	synchronized ReferenceIterator getRefs() throws IOException {
 		return new RefIterator();
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#isEmpty()
-	 */
 	@Override
 	boolean isEmpty() {
 		return table == null || table.getRecordCount() == 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#getReferenceLevel()
-	 */
 	@Override
 	byte getReferenceLevel() {
 		return refLevel;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#removeAll()
-	 */
 	@Override
 	synchronized void removeAll() throws IOException {
 		table.deleteAll();
@@ -352,14 +321,11 @@ class BigRefListV0 extends RefList {
 		setInvalid();
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#removeRef(ghidra.program.model.symbol.MemReference)
-	 */
 	@Override
 	synchronized boolean removeRef(Address deleteAddr, int opIndex) throws IOException {
 		LongField addrField = new LongField(addrMap.getKey(deleteAddr, false));
-		for (long id : table.findRecords(addrField, ADDRESS_COL)) {
-			Record rec = table.getRecord(id);
+		for (Field id : table.findRecords(addrField, ADDRESS_COL)) {
+			DBRecord rec = table.getRecord(id);
 			if (rec.getByteValue(OPINDEX_COL) == (byte) opIndex) {
 				table.deleteRecord(id);
 				if (table.getRecordCount() == 0) {
@@ -397,16 +363,13 @@ class BigRefListV0 extends RefList {
 		return maxLevel;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#setPrimary(ghidra.program.model.symbol.MemReference, boolean)
-	 */
 	@Override
 	synchronized boolean setPrimary(Reference ref, boolean isPrimary) throws IOException {
 		int opIndex = ref.getOperandIndex();
 		Address changeAddr = isFrom ? ref.getToAddress() : ref.getFromAddress();
 		LongField addrField = new LongField(addrMap.getKey(changeAddr, false));
-		for (long id : table.findRecords(addrField, ADDRESS_COL)) {
-			Record rec = table.getRecord(id);
+		for (Field id : table.findRecords(addrField, ADDRESS_COL)) {
+			DBRecord rec = table.getRecord(id);
 			if (rec.getByteValue(OPINDEX_COL) == (byte) opIndex) {
 				RefListFlagsV0 flags = new RefListFlagsV0(rec.getByteValue(FLAGS_COL));
 				if (flags.isPrimary() == isPrimary) {
@@ -421,17 +384,14 @@ class BigRefListV0 extends RefList {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#setSymbolID(ghidra.program.model.symbol.MemReference, long)
-	 */
 	@Override
 	synchronized boolean setSymbolID(Reference ref, long symbolID) throws IOException {
 		boolean hasSymbolID = symbolID >= 0;
 		int opIndex = ref.getOperandIndex();
 		Address changeAddr = isFrom ? ref.getToAddress() : ref.getFromAddress();
 		LongField addrField = new LongField(addrMap.getKey(changeAddr, false));
-		for (long id : table.findRecords(addrField, ADDRESS_COL)) {
-			Record rec = table.getRecord(id);
+		for (Field id : table.findRecords(addrField, ADDRESS_COL)) {
+			DBRecord rec = table.getRecord(id);
 			if (rec.getByteValue(OPINDEX_COL) == (byte) opIndex) {
 				RefListFlagsV0 flags = new RefListFlagsV0(rec.getByteValue(FLAGS_COL));
 				if (flags.hasSymbolID() == hasSymbolID &&
@@ -447,9 +407,6 @@ class BigRefListV0 extends RefList {
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see ghidra.program.database.references.RefList#updateRefType(ghidra.program.model.address.Address, int, ghidra.program.model.symbol.RefType)
-	 */
 	@Override
 	synchronized void updateRefType(Address changeAddr, int opIndex, RefType refType)
 			throws IOException {
@@ -459,8 +416,8 @@ class BigRefListV0 extends RefList {
 			updateRefLevel = (newLevel != refLevel);
 		}
 		LongField addrField = new LongField(addrMap.getKey(changeAddr, false));
-		for (long id : table.findRecords(addrField, ADDRESS_COL)) {
-			Record rec = table.getRecord(id);
+		for (Field id : table.findRecords(addrField, ADDRESS_COL)) {
+			DBRecord rec = table.getRecord(id);
 			if (rec.getByteValue(OPINDEX_COL) == (byte) opIndex) {
 				if (refType.getValue() == rec.getByteValue(TYPE_COL)) {
 					return; // change not required
@@ -515,9 +472,6 @@ class BigRefListV0 extends RefList {
 			recIter = table.iterator();
 		}
 
-		/* (non-Javadoc)
-		 * @see ghidra.program.model.symbol.MemReferenceIterator#hasNext()
-		 */
 		@Override
 		public boolean hasNext() {
 			try {
@@ -529,9 +483,6 @@ class BigRefListV0 extends RefList {
 			return false;
 		}
 
-		/* (non-Javadoc)
-		 * @see ghidra.program.model.symbol.MemReferenceIterator#next()
-		 */
 		@Override
 		public Reference next() {
 			try {
@@ -545,9 +496,6 @@ class BigRefListV0 extends RefList {
 			return null;
 		}
 
-		/**
-		 * @see java.util.Iterator#remove()
-		 */
 		@Override
 		public void remove() {
 			throw new UnsupportedOperationException();

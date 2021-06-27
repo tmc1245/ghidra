@@ -165,8 +165,7 @@ public abstract class CompositeEditorPanel extends JPanel
 						model.notifyCompositeChanged();
 					});
 				Component c = provider.getComponent();
-				Window w = SwingUtilities.windowForComponent(c);
-				DockingWindowManager.showDialog(w, dlg, c);
+				DockingWindowManager.showDialog(c, dlg);
 				return true;
 			}
 		}
@@ -1256,7 +1255,7 @@ public abstract class CompositeEditorPanel extends JPanel
 
 			Plugin plugin = provider.getPlugin();
 			final PluginTool tool = plugin.getTool();
-			editor = new DataTypeSelectionEditor(tool, maxLength,
+			editor = new DataTypeSelectionEditor(tool,
 				bitfieldAllowed ? AllowedDataTypes.SIZABLE_DYNAMIC_AND_BITFIELD
 						: AllowedDataTypes.SIZABLE_DYNAMIC);
 			editor.setTabCommitsEdit(true);
@@ -1288,12 +1287,7 @@ public abstract class CompositeEditorPanel extends JPanel
 				}
 			};
 
-			dataTypeChooserButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					Swing.runLater(() -> stopEdit(tool));
-				}
-			});
+			dataTypeChooserButton.addActionListener(e -> Swing.runLater(() -> stopEdit(tool)));
 
 			textField.addFocusListener(new FocusAdapter() {
 				@Override
