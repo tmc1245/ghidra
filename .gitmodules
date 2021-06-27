@@ -1,0 +1,3 @@
+[submodule "G"]
+	path = G
+	url = https://tmc1245@github.com/tmc1245/ghidra
